@@ -20,3 +20,4 @@ The are 3 pages/views:
 
 pip install -r requerements.txt
 
+python app.py
