@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Management of web data - ChatScraping</title>
+    <link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
+	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<style>
+        .details-control {
+            background: url('https://datatables.net/examples/resources/details_open.png') no-repeat center center;
+            cursor: pointer;
+        }
+        .details-control:hover {
+            background: url('https://datatables.net/examples/resources/details_close.png') no-repeat center center;
+        }
+        td.details-control {
+            background: url('https://datatables.net/examples/resources/details_open.png') no-repeat center center;
+            cursor: pointer;
+        }
+        tr.shown td.details-control {
+            background: url('https://datatables.net/examples/resources/details_close.png') no-repeat center center;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0, 0, 0);
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+		.is-saved {
+			background-color: #d4edda !important;
+		}
+		.scrollable-pre {
+            max-height: 40em; /* Ajustar la altura máxima en términos de líneas de texto */
+			max-width: 90em; /* Yo he añadido estoy y ChatGPT el resto */
+            width: 100%; /* Hacer que ocupe el mismo ancho que su contenedor */
+            overflow: auto; /* Habilitar el scroll tanto horizontal como vertical */
+            white-space: pre; /* Mantener los espacios en blanco y saltos de línea */
+        }
+    </style>
+</head>
+<body>
+<h1>ChatScraping</h1>
+<a href="{{ url_for('upload') }}" class="btn btn-link">Search in web</a>
+<a href="{{ url_for('render_URLs') }}" class="btn btn-link">Manage web data</a>
+<a href="{{ url_for('render_chat') }}" class="btn btn-link">Chat with scraped data</a>
+<div class="container mt-4">
+	<table id="urls-table" class="display" style="width:100%">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>URL</th>
+				<th>Page Title</th>
+				<th>Link</th>
+				<th>URL origin</th>
+				<th>Rating</th>
+				<th>Table record created at</th>
+				<th>Table record updated at</th>
+				<th>Actions</th>
+			</tr>
+		</thead>
+		<tbody></tbody>
+	</table>
+	
+	<div id="commentModal" class="modal">
+		<div class="modal-content">
+			<span class="close">&times;</span>
+			<textarea id="comment" rows="4" cols="50" placeholder="Enter your comment here..."></textarea>
+			<button id="saveComment">Save Comment</button>
+		</div>
+	</div>
+	
+	<div id="tagModal" class="modal">
+		<div class="modal-content">
+			<span class="close">&times;</span>
+			<textarea id="tags" rows="4" cols="50" placeholder="Enter your tags here, separated by commas..."></textarea>
+			<button id="saveTags">Save Tags</button>
+		</div>
+	</div>
+	
+	<div id="urlVersionsModal" class="modal">
+		<div class="modal-content">
+			<span class="close">&times;</span>
+			<table id="url-versions-table" style="width:100%">
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>URL ID</th>
+						<th>Link</th>
+						<th>HTML saved</th>
+						<th>PDF saved</th>
+						<th>Table record created at</th>
+						<th>Table record updated at</th>
+						<th>Action</th>
+					</tr>
+				</thead>
+			</table>
+		</div>
+	</div>
+	
+	<div id="textsModal" class="modal">
+		<div class="modal-content">
+			<span class="close">&times;</span>
+			<table id="texts-table" class="stripe" style="width:100%">
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Text</th>
+						<th>URL version ID</th>
+						<th>Text origin</th>
+						<th>Table record created at</th>
+						<th>Table record updated at</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for text in texts %}
+					<tr>
+						<td>{{ text.id }}</td>
+						<td><pre class="scrollable-pre">{{ text.text }}</pre></td>
+						<td>{{ text.url_version_id}}</td>
+						<td>{{ text.origin }}</td>
+						<td>{{ text.created_at }}</td>
+						<td>{{ text.updated_at }}</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+	
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+			var tableURLs = $('#urls-table').DataTable({
+                "ajax": {
+                    "url": "/api/urls",
+                    "dataSrc": ""
+                },
+                "columns": [
+                    { "data": "id" },
+                    { "data": "url" },
+                    { "data": "page_title" },
+					{
+						"data": null,
+						"render": function(data, type, row) {
+							return '<a href="' + row.url + '">' + row.page_title + '</a>';
+						}
+					},
+                    { "data": "origin" },
+                    { "data": "rating" },
+                    { "data": "created_at" },
+                    { "data": "updated_at" },
+                    {
+                        "data": null,
+						"render": function(data, type, row) {
+							return '<button class="commentBtn">Add comment</button>' +
+								   '<button class="tagBtn">Add tags</button>' +
+								   '<button class="savePageBtn">Save page version</button>' +
+								   '<button class="showURLVersionsBtn">Show versions</button>'
+						},
+                        "orderable": false
+                    }
+                ],
+                "order": [[0, 'asc']],
+				"columnDefs": [{
+				 	"targets": [0,1,2],  // ID, URL and title)
+				 	"visible": false,  // Hide the column
+				}],
+				"createdRow": function(row, data, dataIndex) {
+					if (data.is_saved) {
+						$(row).addClass('is-saved');
+					}
+				},
+				"initComplete": function(settings, json) {
+					// Iterate over each row and append body row
+					tableURLs.rows().every(function() {
+						var data = this.data();
+						var tr = $(this.node());
+						var bodyHtml = '<tr class="body-row"><td colspan="6"><strong>Page body sample:</strong> ' + data.body + '</td></tr>';
+						tr.after(bodyHtml);
+					});
+				}
+            });
+			
+			// Event handler for the "Save Page" button
+			$('#urls-table tbody').on('click', 'button.savePageBtn', function(e) {
+				e.stopPropagation();
+				var tr = $(this).closest('tr');
+				var row = tableURLs.row(tr);
+
+				// Disable the button immediately to prevent multiple clicks
+				$(this).prop('disabled', true);
+
+				// Send an AJAX request to update the is_saved field in the backend
+				$.ajax({
+					url: '/api/url_versions',
+					method: 'POST',
+					contentType: 'application/json',
+					data: JSON.stringify({ id: row.data().id, url: row.data().url }),
+					success: function(response) {
+						$(row.node()).addClass('is-saved');
+
+						// Optionally, show a success message
+						alert('Page version saved successfully.');
+					},
+					error: function(xhr, status, error) {
+						// Re-enable the button if there was an error
+						$(this).prop('disabled', false);
+						alert('Failed to save the page version.');
+					}
+				});
+				// activate button again, so user can create all versiones he wants
+				$(this).prop('disabled', false);
+			});
+			
+			// Toggle row details for tags and comments
+			$('#urls-table tbody').on('click', 'tr', function() {
+				var tr = $(this).closest('tr');
+				var row = tableURLs.row(tr);
+
+				if (row.child.isShown()) {
+					// This row is already open - close it
+					row.child.hide();
+					tr.removeClass('shown');
+				} else {
+					// Open this row
+					var tagsHtml = '<ul>';
+					for (var i = 0; i < row.data().tags.length; i++) {
+						tagsHtml += '<li><i>' + row.data().tags[i].name + '</i>: ' + row.data().tags[i].path + '</li>';
+					}
+					tagsHtml += '</ul>';
+
+					var commentsHtml = '<ul>';
+					for (var i = 0; i < row.data().comments.length; i++) {
+						commentsHtml += '<li>' + row.data().comments[i].text + '</li>';
+					}
+					commentsHtml += '</ul>';
+
+					row.child('<div><strong>Tags:</strong>' + tagsHtml + '</div><div><strong>Comments:</strong>' + commentsHtml + '</div>').show();
+					tr.addClass('shown');
+				}
+			});
+
+            // Modal elements
+            var commentModal = document.getElementById("commentModal");
+            var span = document.getElementsByClassName("close")[0];
+            var commentTextarea = document.getElementById("comment");
+            var saveCommentButton = document.getElementById("saveComment");
+
+            var currentURLId = null;
+
+            // Show modal on button click
+            $('#urls-table tbody').on('click', 'button.commentBtn', function (e) {
+				e.stopPropagation();
+                var tr = $(this).closest('tr');
+                var row = tableURLs.row(tr);
+                currentURLId = row.data().id;
+
+                commentTextarea.value = ''; // Clear the textarea
+                commentModal.style.display = "block";
+            });
+
+            // Close the modal
+            span.onclick = function() {
+                commentModal.style.display = "none";
+            }
+
+            // Close the modal when clicking outside of it
+            window.onclick = function(event) {
+                if (event.target == commentModal) {
+                    commentModal.style.display = "none";
+                }
+            }
+
+            // Save comment
+            saveCommentButton.onclick = function() {
+                var comment = commentTextarea.value;
+                if (currentURLId !== null && comment.trim() !== '') {
+                    $.ajax({
+                        type: 'POST',
+                        url: '/api/comments',
+                        data: JSON.stringify({ url_id: currentURLId, comment: comment }),
+                        contentType: 'application/json',
+                        success: function(response) {
+                            alert('Comment saved successfully!');
+                            modal.style.display = "none";
+							table.ajax.reload(null, false); // Reload the data in the table without resetting the paging
+                        },
+                        error: function(error) {
+                            alert('Error saving comment');
+                        }
+                    });
+                }
+            }
+			
+			// Elements for the tags modal
+			var tagModal = document.getElementById("tagModal");
+			var closeTagModal = document.getElementsByClassName("close")[1]; // Assumes the second close button is for the tag modal
+			var tagsTextarea = document.getElementById("tags");
+			var saveTagsButton = document.getElementById("saveTags");
+
+			var currentURLIdForTags = null;
+
+			// Show tag modal on button click
+			$('#urls-table tbody').on('click', 'button.tagBtn', function (e) {
+				e.stopPropagation();
+				var tr = $(this).closest('tr');
+				var row = tableURLs.row(tr);
+				currentURLIdForTags = row.data().id;
+
+				tagsTextarea.value = ''; // Clear the textarea
+				tagModal.style.display = "block";
+			});
+
+			// Close the tag modal
+			closeTagModal.onclick = function() {
+				tagModal.style.display = "none";
+			}
+
+			// Close the tag modal when clicking outside of it
+			window.onclick = function(event) {
+				if (event.target == tagModal) {
+					tagModal.style.display = "none";
+				}
+			}
+
+			// Save tags
+			saveTagsButton.onclick = function() {
+				var tags = tagsTextarea.value;
+				if (currentURLIdForTags !== null && tags.trim() !== '') {
+					$.ajax({
+						type: 'POST',
+						url: '/api/tags',
+						data: JSON.stringify({ url_id: currentURLIdForTags, tags: tags }),
+						contentType: 'application/json',
+						success: function(response) {
+							alert('Tags added successfully!');
+							tagModal.style.display = "none";
+							table.ajax.reload(null, false); // Reload the data in the table without resetting the paging
+						},
+						error: function(error) {
+							alert('Error adding tags');
+						}
+					});
+				}
+			}
+			
+			var tableURLVersions = $('#url-versions-table').DataTable({
+                "ajax": {
+                    "url": "/api/url_versions",
+                    "dataSrc": ""
+                },
+                "columns": [
+                    { "data": "id" },
+                    { "data": "url_id" },
+					{
+						"data": null,
+						"render": function(data, type, row) {
+							return '<a href="' + row.url + '">' + row.url_title + '</a>';
+						}
+					},
+                    // { "data": "all_readable_text" },
+					{
+						"data": null,
+						"render": function(data, type, row) {
+							return '<a href="'+row.html_file_path+'" target="_blank">View HTML page</a>';
+						}
+					},
+					{
+						"data": null,
+						"render": function(data, type, row) {
+							return '<a href="'+row.pdf_file_path+'" target="_blank">View PDF</a>';
+						}
+					},
+                    { "data": "created_at" },
+                    { "data": "updated_at" },
+                    {
+                        "data": null,
+						"render": function(data, type, row) {
+							return '<button class="saveTextChunksBtn" ' + (row.are_texts_saved ? 'disabled' : '') + '>Save text chunks &amp; embeddings</button>' +
+								   '<button class="showTextsBtn">Show text chunks</button>'
+						},
+                        "orderable": false
+                    }
+                ],
+                "order": [[0, 'asc']],
+				"columnDefs": [{
+					"targets": [0,1], // Hide version ID and URL ID
+					"visible": false,
+				}],
+				"createdRow": function(row, data, dataIndex) {
+					if (data.are_texts_saved) {
+						$(row).addClass('is-saved');
+					}
+				},
+				"initComplete": function(settings, json) {
+					// Iterate over each row and append all_readable_text row
+					tableURLVersions.rows().every(function() {
+						var data = this.data();
+						var tr = $(this.node());
+						var bodyHtml = '<tr class="all-readable-text-row"><td colspan="6">' +
+									     '<strong>All readable text:</strong> <pre class="scrollable-pre">' + data.all_readable_text + '</pre>' +
+									   '</td></tr>';
+						tr.after(bodyHtml);
+					});
+				}
+            });
+			
+			var urlVersionsModal = document.getElementById("urlVersionsModal");
+			var closeUrlVersionsModal = document.getElementsByClassName("close")[2]; // Assumes the 3th close button is for the tag modal
+			
+            // Show modal on button click
+            $('#urls-table tbody').on('click', 'button.showURLVersionsBtn', function (e) {
+				e.stopPropagation();
+                var tr = $(this).closest('tr');
+                var row = tableURLs.row(tr);
+                currentURLId = row.data().id;
+				tableURLVersions.column(1).search('^'+currentURLId+'$', true, false).draw();
+                urlVersionsModal.style.display = "block";
+            });
+
+            // Close the modal
+            closeUrlVersionsModal.onclick = function() {
+                urlVersionsModal.style.display = "none";
+            }
+
+            // Close the modal when clicking outside of it
+            window.onclick = function(event) {
+                if (event.target == urlVersionsModal) {
+                    urlVersionsModal.style.display = "none";
+                }
+            }
+			
+			// Event handler for the "Save text chunks" button
+			$('#url-versions-table tbody').on('click', 'button.saveTextChunksBtn', function(e) {
+				e.stopPropagation();
+				var tr = $(this).closest('tr');
+				var row = tableURLVersions.row(tr);
+
+				// Disable the button immediately to prevent multiple clicks
+				$(this).prop('disabled', true);
+
+				// Send an AJAX request to save the text chunks, create embeddings, and update the are_texts_saved field in the backend
+				$.ajax({
+					url: '/api/save_text_chunks',
+					method: 'POST',
+					contentType: 'application/json',
+					data: JSON.stringify({ id: row.data().id }),
+					success: function(response) {
+						// Update the DataTable row with the new are_texts_saved value
+						row.data().are_texts_saved = true;
+						$(row.node()).addClass('is-saved');
+
+						// Optionally, show a success message
+						alert('Text chunks saved successfully.');
+					},
+					error: function(xhr, status, error) {
+						// Re-enable the button if there was an error
+						$(this).prop('disabled', false);
+						alert('Failed to save the text chunks.');
+					}
+				});
+			});
+			
+            var tableTexts = $('#texts-table').DataTable({
+				"columnDefs": [{
+					"targets": [0,2], // Hide text ID and URL version ID
+					"visible": false,
+				}],
+			});
+			
+			var textsModal = document.getElementById("textsModal");
+			var closeTextsModal = document.getElementsByClassName("close")[3]; // Assumes the 4th close button is for the tag modal
+			
+            // Show modal on button click
+            $('#url-versions-table tbody').on('click', 'button.showTextsBtn', function (e) {
+				e.stopPropagation();
+                var tr = $(this).closest('tr');
+                var row = tableURLVersions.row(tr);
+                currentURLVersionId = row.data().id;
+				tableTexts.column(2).search('^'+currentURLVersionId+'$', true, false).draw();
+                textsModal.style.display = "block";
+            });
+
+            // Close the modal
+            closeTextsModal.onclick = function() {
+                textsModal.style.display = "none";
+            }
+
+            // Close the modal when clicking outside of it
+            window.onclick = function(event) {
+                if (event.target == textsModal) {
+                    textsModal.style.display = "none";
+                }
+            }
+        });
+    </script>
+</div>
+</body>
+</html>
