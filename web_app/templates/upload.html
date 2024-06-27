@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload web data - ChatScraping</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+	<h1>ChatScraping</h1>
+	<a href="{{ url_for('upload') }}" class="btn btn-link">Search in web</a>
+	<a href="{{ url_for('render_URLs') }}" class="btn btn-link">Manage web data</a>
+	<a href="{{ url_for('render_chat') }}" class="btn btn-link">Chat with scraped data</a>
+	<div class="container mt-4">
+		<h2>Add texts or search in web</h2>
+		<ul class="nav nav-tabs" id="myTab" role="tablist">
+			<li class="nav-item" role="presentation">
+				<button class="nav-link" id="text-tab" data-bs-toggle="tab" data-bs-target="#text" type="button" role="tab" aria-controls="text" aria-selected="true">Texts</button>
+			</li>
+			<li class="nav-item" role="presentation">
+				<button class="nav-link active" id="urls-tab" data-bs-toggle="tab" data-bs-target="#urls" type="button" role="tab" aria-controls="urls" aria-selected="false">URLs</button>
+			</li>
+		</ul>
+		<div class="tab-content" id="myTabContent">
+			<div class="tab-pane fade" id="text" role="tabpanel" aria-labelledby="text-tab">
+				<form method="POST" enctype="multipart/form-data">
+					<input type="hidden" name="database" value="">
+					<div class="form-group">
+						<label for="text_file">Text File:</label>
+						<input type="file" class="form-control-file" id="text_file" name="text_file">
+					</div>
+					<textarea class="form-control" rows="10" id="text_content" name="text_content"></textarea>
+					<button type="submit" class="btn btn-primary">Upload</button>
+					<a href="{{ url_for('index') }}" class="btn btn-primary">Back</a>
+				</form>
+			</div>
+			<div class="tab-pane fade show active" id="urls" role="tabpanel" aria-labelledby="urls-tab">
+				<form method="POST" enctype="multipart/form-data">
+					<div class="form-group">
+						<label for="text_to_search">Text to search with DuckDuckGo:</label>
+						<div>
+							<label class="sr-only" for="text_to_search">Text to search with DuckDuckGo:</label>
+							<input type="text" id="text_to_search" name="text_to_search" class="form-control">
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="max_results_number">Maximum results number:</label>
+						<input type="text" id="max_results_number" name="max_results_number">
+					</div>
+					<button type="submit" class="btn btn-primary" id="search_with_DDG" name="search_with_DDG">Search</button>
+				</form>
+				<p>Last search results:</p>
+				<ul id="DDG_search_result_list" name="DDG_search_result_list"></ul>
+			</div>
+		</div>
+	</div>
+	<script>
+		$(document).ready(function() {
+			// $('.tab-pane').first().addClass('show active');
+			$('.nav-link').click(function(event) {
+				event.preventDefault();
+				var target = $(this).attr('data-bs-target');
+				$('.nav-link').removeClass('active');
+				$(this).addClass('active');
+				$('.tab-pane').removeClass('show active');
+				$(target).addClass('show active');
+			});
+			
+            $('#search_with_DDG').click(function(event){
+				event.preventDefault();
+                var text_to_search = $('#text_to_search').val();
+				var max_results_number = $('#max_results_number').val();
+				$.ajax({
+					url: '/search_with_DDG',
+					method: 'POST',
+					data: {'text_to_search': text_to_search, 'max_results_number': max_results_number},
+					success: function(response){
+						$('#DDG_search_result_list').empty();
+						response.search_results.forEach(function(result) {
+							var urlsContent = $('#urls_content');
+							if (urlsContent.val() == "") {
+								urlsContent.val(result['href']);
+							} else {
+								urlsContent.val(urlsContent.val() + "\n" + result['href']);
+							}
+							var listItem = $('<li>').append($('<a>', { 
+								href: result['href'],
+								text: result['title']
+							})).append(': ' + result['body']);
+							$('#DDG_search_result_list').append(listItem);
+						});
+						$('#text_to_search').val("");
+					},
+					error: function(error){
+						console.log(error);
+					}
+				});
+            });
+        });
+    </script>
+</body>
+</html>
