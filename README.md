@@ -26,6 +26,10 @@ cd web_app
 python app.py
 ```
 
+## Chat voice
+
+*ChatScraping* can speak out the output text in the chat. For this, [Piper](https://github.com/rhasspy/piper) is used, because it is entirely local, the quality is good enough, and the speed is very good. You need to download [the desired voice](https://github.com/rhasspy/piper/blob/master/VOICES.md) and place the files (.onnx and .json) in the directory/folder 'web_app/static/voices'. If there are several voices in that directory, they will be listed in the 'Voices' dropdown in the chat web page (to the right and under the LLMs dropdowns).
+
 ## Author
 
 Eduardo Gutiérrez
