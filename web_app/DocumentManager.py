@@ -19,7 +19,6 @@ from langchain_community.llms import Ollama
 from langchain_groq import ChatGroq
 from langchain.schema.document import Document
 
-from youtube_transcript_api import NoTranscriptFound, YouTubeTranscriptApi
 from chatscraping_utils import db, URL, URL_version, Text
 from sqlalchemy.exc import IntegrityError
 
