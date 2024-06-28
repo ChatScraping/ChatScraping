@@ -193,7 +193,6 @@ class DocumentManager:
 
     def answer_question(self, question, faiss_only=False, llm_only=False, num_docs=4, text_only=False, use_groq=False):
         answer = {}
-        print("lalala")
         if faiss_only:
             answer['faiss'] = self.db.similarity_search(question, k=num_docs)
         else:
@@ -227,6 +226,6 @@ class DocumentManager:
             elif 'Groq' in answer:
                 return answer['Groq'].content
             elif 'faiss' in answer:
-                return "Textos seleccionados:\n" + "\n".join([ans.page_content for ans in answer['faiss']])
+                return "Selected texts:\n" + "\n".join([ans.page_content for ans in answer['faiss']])
         else:
             return answer
