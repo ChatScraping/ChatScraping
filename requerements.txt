@@ -1,4 +1,4 @@
-duckduckgo_search.5.3.1b1
+duckduckgo_search==5.3.1b1
 einops
 faster-whisper
 langchain
@@ -10,7 +10,6 @@ nvidia-cudnn-cu11
 onnxruntime-gpu
 piper-tts
 secure-smtplib
-smtplib
 transformers
 unstructured
 tokenizers
