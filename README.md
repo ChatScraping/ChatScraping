@@ -20,6 +20,16 @@ There are 3 pages/views:
 
 ```sh
 git clone https://github.com/ChatScraping/ChatScraping
-cd ChatScraping/web_app
+cd ChatScraping
 pip install -r requirements.txt
+cd web_app
 python app.py
+```
+
+## Author
+
+Eduardo Gutiérrez
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
