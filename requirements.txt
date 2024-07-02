@@ -2,7 +2,7 @@ flask
 flask_sqlalchemy
 duckduckgo_search==5.3.1b1
 einops
-faster-whisper
+groq
 langchain
 langchain-community
 langchain-groq
