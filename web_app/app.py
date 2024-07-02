@@ -6,7 +6,7 @@ from DocumentManager import DocumentManager
 from datetime import datetime
 import subprocess, shlex
 import time
-from faster_whisper import WhisperModel
+from groq import Groq
 from duckduckgo_search import DDGS
 import json
 from sqlalchemy.exc import IntegrityError
@@ -179,23 +179,19 @@ def upload_and_process_question_audio():
     file_path = os.path.join('uploads', filename)
     file.save(file_path)
     
-    # Speech to texto with 'Faster Whisper'
-    
-    model_size = "large-v3"
-    
-    # Run on GPU with FP16
-    model = WhisperModel(model_size, device="cuda", compute_type="float16")
-
-    segments, info = model.transcribe(file_path, beam_size=5)
-    print("Faster Whisper: Detected language '%s' with probability %f" % (info.language, info.language_probability))
-    question = ""; loop1 = True;
-    for segment in segments:
-        if True == loop1:
-            question = segment.text
-            loop1 = False
-        else:
-            question += " " + segment.text
-    print("Faster Whisper: Transciption: " + question)
+    # Speech to text with 'Whisper large v3' using 'Groq'
+    question = "";
+    client = Groq()
+    with open(file_path, "rb") as file:
+        transcription = client.audio.transcriptions.create(
+          file=(filename, file.read()),
+          model="whisper-large-v3",
+          # prompt="Specify context or spelling",  # Optional
+          response_format="json",  # Optional
+          # language="en",  # Optional
+          temperature=0.0  # Optional
+        )
+        question = transcription.text;
     
     return question
 
