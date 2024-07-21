@@ -16,6 +16,10 @@ There are 3 pages/views:
 2. **Manage Web Data:** There is a table with *DDG* search results. In that table, there are buttons to add comments, add tags, and automatically navigate to the web page to save that page (in 2 files: code file, and PDF document) and store in SQL database converted readable text to Markdown. Additionally, there is a button to view a table with the web page versions for each URL. In each row of that URL versions table, there is a button to split the readable text of that version, store it in a SQL database, create embeddings, and store those embeddings in a FAISS database. There is also a button to view a table with the text chunks.
 3. **Chat with a LLM:** Uses a context with semantically selected text chunks (from those web searches). It's possible to use an LLM from *Ollama* or *Groq* (to use *Groq*, the user needs to export the environment variable `GROQ_API_KEY` with their *Groq* key before starting this web application).
 
+## Motivation
+
+At this early stage, I am building, destroying, and rebuilding, so the interface has a lot of bugs and details that need improvement. The most important thing at this stage is to experiment with new functionalities. Therefore, if someone wants a finished application, they can wait or contact me for a paid contract. Those who find this project interesting and want to contribute can start by giving it a star, sharing it for publicity, and commenting through the 'Issues' tab. A pull request with code would make me very happy. :-)
+
 ## Installation
 
 ```sh
@@ -25,6 +29,10 @@ pip install -r requirements.txt
 cd web_app
 python app.py
 ```
+
+## Usage
+
+Follow the links in the top menu, from left to right ('Search the web', 'Manage web data', and 'Chat with scraped data'). On the 'Manage web data' page, don't forget to save the version, and save text chunks, before asking questions about those web pages.
 
 ## Chat voice
 
