@@ -1,5 +1,4 @@
 import os
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.document_transformers import Html2TextTransformer
 from playwright.async_api import async_playwright
@@ -9,7 +8,7 @@ from urllib.parse import urlparse, unquote
 from pathlib import Path
 from datetime import datetime
 
-from langchain.embeddings.huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.prompts import PromptTemplate
 from langchain_core.prompts import ChatPromptTemplate
