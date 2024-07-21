@@ -6,6 +6,7 @@ groq
 langchain
 langchain-community
 langchain-groq
+langchain-huggingface
 nest_asyncio
 nvidia-cublas-cu11
 nvidia-cudnn-cu11
