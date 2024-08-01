@@ -27,7 +27,8 @@ doc_manager = DocumentManager()
 # All models: https://console.groq.com/settings/limits
 GROQ_MODELS = ['mixtral-8x7b-32768', 'llama3-70b-8192', 'llama3-8b-8192', 'gemma-7b-it', 'gemma2-9b-it',
                'llama3-groq-8b-8192-tool-use-preview', 'llama3-groq-70b-8192-tool-use-preview',
-              'llama-3.1-8b-instant', 'llama-3.1-70b-versatile', 'llama-3.1-405b-reasoning']
+               'llama-3.1-8b-instant', 'llama-3.1-70b-versatile', 'llama-3.1-405b-reasoning',
+               'llama-guard-3-8b']
 OLLAMA_MODELS = ['tinyllama', 'dolphin-phi', 'solar', 'nous-hermes2', 'llava', 'bakllava']
 
 def get_databases():
